@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "beyonder": {
+      "type": "http",
+      "url": "https://mcp.beyonder.si/mcp"
+    }
+  }
+}

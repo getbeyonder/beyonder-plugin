@@ -1,0 +1,27 @@
+{
+  "description": "Beyonder: the agent file (AGENT.md) at session start; a real remove or archive (MCP or the beyonder CLI) asks the person first; dry runs pass, everything else keeps normal permissions",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-context.sh\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^mcp__.*beyonder.*__(app_remove|app_archive|app_write|app_restore)$",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/approve-write.sh\"", "timeout": 10, "onFailure": "block" }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          { "type": "command", "if": "Bash(*beyonder*)", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/approve-write.sh\"", "timeout": 10, "onFailure": "block" },
+          { "type": "command", "if": "PowerShell(*beyonder*)", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/approve-write.sh\"", "timeout": 10, "onFailure": "block" }
+        ]
+      }
+    ]
+  }
+}

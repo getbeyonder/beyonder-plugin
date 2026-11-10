@@ -1,0 +1,13 @@
+{
+  "description": "Beyonder for Codex: a beyonder CLI command that removes or archives an app is denied unless it is a dry run; the model is sent to the MCP tool, which Codex asks the person about",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          { "type": "command", "command": "sh \"${PLUGIN_ROOT}/hooks/scripts/approve-write.sh\" --as codex", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

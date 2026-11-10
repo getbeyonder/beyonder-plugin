@@ -1,0 +1,22 @@
+{
+  "name": "beyonder",
+  "displayName": "Beyonder",
+  "description": "Run a company's Beyonder board: install, connect, pause and remove apps, install suites, and use each app's tools. Removing and archiving always ask for your approval (dry runs don't); app writes follow your normal permissions.",
+  "author": {
+    "name": "Beyonder",
+    "url": "https://beyonder.si"
+  },
+  "repository": "https://github.com/getbeyonder/beyonder-plugin",
+  "homepage": "https://beyonder.si",
+  "license": "Apache-2.0",
+  "keywords": [
+    "beyonder",
+    "mcp",
+    "board",
+    "apps",
+    "crm"
+  ],
+  "privacyPolicyUrl": "https://beyonder.si/privacy",
+  "termsOfServiceUrl": "https://beyonder.si/terms",
+  "supportUrl": "https://beyonder.si"
+}

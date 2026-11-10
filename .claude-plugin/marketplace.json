@@ -1,0 +1,13 @@
+{
+  "name": "beyonder",
+  "description": "Beyonder for Claude Code: run your company's Beyonder board as the signed-in person.",
+  "owner": { "name": "Beyonder", "url": "https://beyonder.si" },
+  "plugins": [
+    {
+      "name": "beyonder",
+      "source": "./plugin",
+      "description": "The Beyonder MCP server (sign in with Beyonder), the Beyonder agent file and skills, and an approval prompt before removing or archiving an app.",
+      "category": "productivity"
+    }
+  ]
+}
