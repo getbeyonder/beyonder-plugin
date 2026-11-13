@@ -92,6 +92,9 @@ company). `-d '<json>'` passes all arguments as one JSON object. `beyonder <comm
 | `app_remove` | `beyonder app_remove <app>` |
 | `app_restore` | `beyonder app_restore` (the removed apps), `beyonder app_restore --app <app> --mode data\|app` |
 | `brand_set` | `beyonder brand_set "<voice>" [--tone "<tone>"] [--name "<name>"]` |
+| `social_accounts` | `beyonder social_accounts [--network <id>]` |
+| `social_connect` | `beyonder social_connect --network <id> [--purpose publishing\|messaging]`; sign in again: `beyonder social_connect --account <id>` |
+| `social_remove` | `beyonder social_remove <account>` (prints the link for the person; removes nothing) |
 | `apps_tools_list` | `beyonder apps_tools_list [--app <app>]`, or `beyonder <app> --help` |
 | `app_tool_describe` | `beyonder <app> <tool> --help` (raw input schema: `--schema`) |
 | `app_tools_search` | `beyonder search "<words>" [--app <app>]` |

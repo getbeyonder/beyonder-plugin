@@ -22,9 +22,14 @@
 # `git -C ~/src/beyonder diff`, `grep -rn beyonder src` and `echo beyonder crm deal` are not the CLI.
 # A `#` at the start of an unquoted word is a comment: it ends the beyonder command, so `app_remove crm # --dry-run`
 # asks.
-# Known limit: words are split on blanks and shell separators, not parsed as sh; a command hidden in a variable or
-# eval, or after a prefix word's value (`sudo -u bob beyonder ...`, `nice -n 5 beyonder ...`) is not seen (Claude
-# Code's own Bash permission prompt still applies). A possible improvement: a real sh tokenizer if that matters.
+# Words are split with quote state (outside quotes, inside '...', inside "..."): a blank or one of ; & | ( ) ` < > { }
+# inside quotes is part of the word, so `--company "Acme Inc"`, `--company='Acme Inc'` and `-d '{"app":"crm"}'` do not
+# hide the command; `{` and `}` split only as a word of their own (a brace group), so `-d {}` is a flag value. The quotes
+# are removed from the word. A quoted word after sh -c (env, sudo ...) and the body of a $(...) or backtick substitution
+# inside double quotes are scanned again as command lines.
+# Known limit: this is a tokenizer, not a full sh parser: a command hidden in a variable or eval, in a shell escape
+# (`\"`, `\'`), in a file the shell runs, or after a prefix word's value (`sudo -u bob beyonder ...`,
+# `nice -n 5 beyonder ...`) is not seen (Claude Code's own Bash permission prompt still applies).
 #
 # awk walks the JSON once (strings and escapes skipped, linear on large inputs) and looks only at keys of the object
 # under the event's "tool_input".
@@ -54,12 +59,83 @@ case "$tool" in Bash|PowerShell) mode=bash ;; esac
 
 verdict=$(printf '%s' "$event" | awk -v mode="$mode" -v tool="$tool" -v asked="$asked" -v q="'" '
 function unescape(v) {
-  gsub(/\\\\/, SUBSEP, v); gsub(/\\"/, "\"", v); gsub(/\\n/, " ; ", v); gsub(/\\[rt]/, " ", v); gsub(/\\\//, "/", v); gsub(SUBSEP, "/", v)
+  gsub(/\\\\/, SUBSEP, v); gsub(/\\"/, "\"", v); gsub(/\\n/, NL, v); gsub(/\\[rt]/, " ", v); gsub(/\\\//, "/", v); gsub(SUBSEP, "/", v)
   return v
 }
-function judge() { # one shell segment of beyonder words seen: cmd, dry, help
+function judge(inb, dry, help, cmd) { # one shell segment of beyonder words seen: cmd, dry, help
   if (!inb || dry || help || reason != "") return
   if (cmd ~ asked) reason = "beyonder " cmd " will change the board"
+}
+function push(tok, tq, tsep, n, text, quoted, sep) { n++; tok[n] = text; tq[n] = quoted; tsep[n] = sep; return n }
+function sub_add(subs, text) { subs[0]++; subs[subs[0]] = text }
+function substs(subs, seg,   t, a, k) { # the command substitutions $(...) and `...` inside one double-quoted string
+  t = seg
+  while ((a = index(t, "$(")) > 0) { t = substr(t, a + 2); k = index(t, ")"); if (!k) { sub_add(subs, t); break } sub_add(subs, substr(t, 1, k - 1)); t = substr(t, k + 1) }
+  t = seg
+  while ((a = index(t, "`")) > 0) { t = substr(t, a + 1); k = index(t, "`"); if (!k) { sub_add(subs, t); break } sub_add(subs, substr(t, 1, k - 1)); t = substr(t, k + 1) }
+}
+# Words with quote state: outside quotes, inside '"'"'...'"'"', inside "...". A blank or one of ; & | ( ) ` < > { } inside quotes is part of
+# the word; outside quotes it ends the word, and ; & | ( ) ` < > and a new line also end the segment (tsep). { and } do
+# that only as a word of their own (a brace group), so `{}` and `{"a":1}` are words. The quotes are removed from the word
+# (tq says it had some). A # at the start of an unquoted word is a comment up to the next new line. A quote that is
+# never closed is an ordinary character. Returns the number of tokens; subs holds the $(...) and `...` bodies seen
+# inside double quotes (they run, even there).
+function tokenize(s, tok, tq, tsep, subs,   n, cur, has, qd, r, i, c, j, nx, flush, sep, lit, seg) {
+  n = 0; cur = ""; has = 0; qd = 0; subs[0] = 0; r = s
+  while (r != "") {
+    if (!match(r, special)) { cur = cur r; has = 1; break }
+    i = RSTART
+    if (i > 1) { cur = cur substr(r, 1, i - 1); has = 1 }
+    c = substr(r, i, 1); r = substr(r, i + 1)
+    flush = 0; sep = 0; lit = ""
+    if (c == " " || c == "\t" || c == "\r" || c == "\n") flush = 1
+    else if (c == "{" || c == "}") {
+      nx = substr(r, 1, 1)
+      if (!has && (nx == "" || nx ~ bnd)) { flush = 1; sep = 1 } else lit = c
+    }
+    else if (c == "#") {
+      if (!has) { sep = 1; j = index(r, NL); r = j ? substr(r, j) : "" } else lit = c
+    }
+    else if (c == q || c == "\"") {
+      j = index(r, c)
+      if (j) {
+        seg = substr(r, 1, j - 1); r = substr(r, j + 1); lit = seg; has = 1; qd = 1
+        if (c == "\"") substs(subs, seg)
+      }
+    }
+    else { flush = 1; sep = 1 } # NL ; & | ( ) ` < >
+    if (flush && has) { n = push(tok, tq, tsep, n, cur, qd, 0); cur = ""; has = 0; qd = 0 }
+    if (sep) n = push(tok, tq, tsep, n, "", 0, 1)
+    if (lit != "") { cur = cur lit; has = 1 }
+  }
+  if (has) n = push(tok, tq, tsep, n, cur, qd, 0)
+  return n
+}
+function scan(str, depth,   tok, tq, tsep, subs, n, j, k, x, lx, inb, pos, pre, cmd, dry, help, skip) {
+  n = tokenize(str, tok, tq, tsep, subs)
+  inb = 0; pos = 1; pre = 0
+  for (j = 1; j <= n + 1; j++) {
+    if (j > n || tsep[j]) { judge(inb, dry, help, cmd); inb = 0; pos = 1; pre = 0; continue }
+    x = tok[j]
+    if (inb && skip) { skip = 0; continue }
+    if (x == "") continue
+    lx = tolower(x)
+    if (!inb) { # command position: pos (still at the start of the segment), pre (after a prefix word or sh -c)
+      if (!pos) continue
+      # a quoted word after sh -c / env / sudo ... is a command line of its own (sh -c '"'"'beyonder app_remove crm'"'"')
+      if (pre && tq[j] && depth < 6) scan(x, depth + 1)
+      if (lx ~ /(^|\/)beyonder(\.exe|\.cmd)?$/) { inb = 1; cmd = ""; dry = 0; help = 0; skip = 0 }
+      else if (lx in prefix || lx ~ /(^|\/)(sh|bash|zsh)$/) pre = 1
+      else if (!(x ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || (pre && x ~ /^-/))) pos = 0
+      continue
+    }
+    if (x == "--url" || x == "--company" || x == "-d" || x == "--app") skip = 1
+    else if (x == "--dry-run") dry = 1
+    else if (x == "--help" || x == "-h" || x == "--schema" || x == "--version") help = 1
+    else if (x ~ /^-/) continue
+    else if (cmd == "") cmd = x
+  }
+  if (depth < 6) for (k = 1; k <= subs[0]; k++) scan(subs[k], depth + 1)
 }
 { s = s $0 "\n" } END {
   # Split on quotes: odd parts are outside strings, even parts inside (a part ending in an odd run of backslashes ends
@@ -100,30 +176,10 @@ function judge() { # one shell segment of beyonder words seen: cmd, dry, help
   if (mode == "mcp") { print (found ? "allow" : tool ~ /^(app_write|app_restore)$/ ? "pass" : "ask"); exit }
   split("env exec command sudo nohup time nice xargs if then else elif do while until !", kw, " ")
   for (j in kw) prefix[kw[j]] = 1
+  NL = "\001"; special = "[ \t\r\n\001;&|()`<>{}" q "\"#]"; bnd = "[ \t\r\n\001;&|()`<>]"
   # A ${...} expansion (inner first, so ${a:-${b}} too) is one word, not a brace group: its braces must not split.
-  v = unescape(command); while (gsub(/\$\{[^{}]*\}/, "$VAR", v)) ; gsub(/[;&|()`<>{}]/, " ; ", v)
-  m = split(v, w, /[ \t\r\n]+/); reason = ""; inb = 0; pos = 1; pre = 0
-  for (j = 1; j <= m + 1; j++) {
-    x = (j <= m) ? w[j] : ";"
-    if (x ~ /^#/) x = ";" # a comment: the words after it are not part of the command
-    gsub(/"/, "", x); gsub(q, "", x)
-    if (x == "") continue
-    if (x == ";") { judge(); inb = 0; pos = 1; pre = 0; continue }
-    lx = tolower(x)
-    if (!inb) { # command position: pos (still at the start of the segment), pre (after a prefix word or sh -c)
-      if (!pos) continue
-      if (lx ~ /(^|\/)beyonder(\.exe|\.cmd)?$/) { inb = 1; cmd = ""; dry = 0; help = 0; skip = 0 }
-      else if (lx in prefix || lx ~ /(^|\/)(sh|bash|zsh)$/) pre = 1
-      else if (!(x ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || (pre && x ~ /^-/))) pos = 0
-      continue
-    }
-    if (skip) { skip = 0; continue }
-    if (x == "--url" || x == "--company" || x == "-d" || x == "--app") skip = 1
-    else if (x == "--dry-run") dry = 1
-    else if (x == "--help" || x == "-h" || x == "--schema" || x == "--version") help = 1
-    else if (x ~ /^-/) continue
-    else if (cmd == "") cmd = x
-  }
+  v = unescape(command); while (gsub(/\$\{[^{}]*\}/, "$VAR", v)) ; reason = ""
+  scan(v, 0)
   print (reason == "" ? "pass" : "ask " reason)
 }')
 

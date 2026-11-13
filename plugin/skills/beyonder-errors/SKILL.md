@@ -21,7 +21,7 @@ first. Tell the person in plain words what happened and what they can do.
 
 | Code | What to do |
 |---|---|
-| `needs_human` | Only a person can do this (a bridge on a link, a tool an app keeps for people, a step closed to agents). Tell them to do it at `link`, or in the app opened from there. Do not retry |
+| `needs_human` | Only a person can do this (a bridge on a link, a tool an app keeps for people, removing a company social account, a network that is connected only inside an app, a step closed to agents). Tell them to do it at `link`, or in the app opened from there. Do not retry |
 | `payment_required` | Only a person can pay: no plan, the app is not bought, or the plan's app limit. Send them to `link`. Do not retry until they say it is done |
 | `forbidden` | The person's role does not allow it (who may do what: AGENT.md). Suggest asking an owner or administrator |
 

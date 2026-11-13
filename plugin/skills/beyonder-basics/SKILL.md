@@ -28,6 +28,7 @@ them. The beyonder MCP tools act on the board as the signed-in person, with exac
 | Remove | An app leaves the board; a ready-made app's project is archived and its data kept; its links leave the board (`app_remove`). Permanent deletion is not offered |
 | App tools | The app's own MCP tools, called as the person (`apps_tools_list`, `app_read`, `app_write`). See the `beyonder-apps` skill |
 | Journal | What happened to the company (`events_list`): business events, oldest first, in pages of up to 50. While `hasMore`, read on with `after` = `lastSequence`. `raw: true` is the platform's technical log: never use it to explain a board to the person |
+| Company social accounts | The one set of social network accounts a company's apps share (`social_accounts`). A person signs in to add one (`social_connect` gives the link). For a company with a shared set: an app uses an account only after it is linked in that app, and only a person removes one, on the board (`social_remove` gives the link) |
 
 ## Rights
 
