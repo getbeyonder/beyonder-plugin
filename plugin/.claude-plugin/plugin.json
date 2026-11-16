@@ -16,6 +16,7 @@
     "apps",
     "crm"
   ],
+  "icon": "./assets/logo.png",
   "privacyPolicyUrl": "https://beyonder.si/privacy",
   "termsOfServiceUrl": "https://beyonder.si/terms",
   "supportUrl": "https://beyonder.si"

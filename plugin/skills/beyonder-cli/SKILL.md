@@ -75,6 +75,12 @@ company). `-d '<json>'` passes all arguments as one JSON object. `beyonder <comm
 |---|---|
 | `whoami` | `beyonder whoami` |
 | `companies_list` | `beyonder companies_list` |
+| `company_card` | `beyonder company_card` (name, time zone, plan, boards; read only) |
+| `company_members` | `beyonder company_members` (the team: id, name, role; read only) |
+| `company_invitations` | `beyonder company_invitations` (invitations nobody has answered yet; read only) |
+| `company_money` | `beyonder company_money` (plan, spend, limits, storage; read only) |
+| `brand_profile` | `beyonder brand_profile` (the whole brand profile; read only) |
+| `company_person_step` | `beyonder company_person_step <action> [--email <e-mail>] [--role <role>] [--member <id-or-name>] [--invitation <id-or-name>] [--app <app>] [--plan <plan>]` (answers what a person must do, with a link; it changes nothing) |
 | `catalog_list` | `beyonder catalog_list [--app <id>] [--lang <code>]` |
 | `list_apps` | `beyonder list_apps` (or `beyonder status` for a short view) |
 | `link_status` | `beyonder link_status <from> <to>` |

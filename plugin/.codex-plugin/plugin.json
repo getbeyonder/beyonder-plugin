@@ -28,6 +28,9 @@
   },
   "interface": {
     "displayName": "Beyonder",
+    "logo": "./assets/logo.png",
+    "composerIcon": "./assets/icon.png",
+    "brandColor": "#268FF1",
     "shortDescription": "Run your Beyonder board",
     "longDescription": "Work with your company's Beyonder board as yourself, with exactly your rights: see the board, install ready-made apps and suites from the catalog, connect apps so data flows between them, pause and resume them, and use each app's own tools, such as reading deals in AI CRM. Codex asks you before it removes or archives an app and, through the Beyonder tools, before it restores an app or writes inside one.",
     "developerName": "Beyonder",
