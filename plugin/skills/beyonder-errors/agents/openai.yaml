@@ -1,0 +1,6 @@
+interface:
+  display_name: "Beyonder Errors"
+  short_description: "What to do when a Beyonder tool refuses or fails"
+  icon_small: "./assets/icon.png"
+  icon_large: "./assets/logo.png"
+  brand_color: "#268FF1"

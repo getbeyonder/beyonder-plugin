@@ -1,0 +1,6 @@
+interface:
+  display_name: "Beyonder Basics"
+  short_description: "What Beyonder is: boards, apps, suites, links and your rights"
+  icon_small: "./assets/icon.png"
+  icon_large: "./assets/logo.png"
+  brand_color: "#268FF1"
