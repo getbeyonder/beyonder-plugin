@@ -1,6 +1,6 @@
 ---
 name: beyonder-business
-description: 'This skill should be used when the person describes a business goal or asks what to set up rather than naming an app: "build a sales funnel", "what should I install", "how do I start my board", "I run a dental clinic", "how do I get more clients", "do my marketing", "which apps work well together", "is there a bundle for this", "connect our Instagram", "which social accounts are connected", "remove the LinkedIn account". It covers reading the board and catalog first, finding apps for each job in the live catalog, offering a suite or a template first when it covers the jobs, what only the person can do, the shared social accounts of the company, the business rules (consent, payments, money, honest data) and what to do when nothing on the board fits.'
+description: 'This skill should be used when the person describes a business goal or asks what to set up rather than naming an app: "build a sales funnel", "what should I install", "how do I start my board", "I run a dental clinic", "how do I get more clients", "do my marketing", "which apps work well together", "is there a bundle for this", "connect our Instagram", "which social accounts are connected", "remove the LinkedIn account". It covers reading the board, brand profile and catalog first, interviewing a newcomer, finding apps for each job in the live catalog, offering a suite or a template first when it covers the jobs, what only the person can do, the shared social accounts of the company, the business rules (consent, payments, money, honest data) and what to do when nothing on the board fits.'
 user-invocable: false
 ---
 
@@ -14,26 +14,44 @@ What an app can do comes only from the live catalog (`catalog_list`) and the app
 never from memory or from this guide. Apps change and new ones appear: do not rely on an app id, a title or a chain
 of apps you saw before.
 
-## Read first, then ask little
+## Read first, then ask the right things
 
-1. Read before you ask: the board (`list_apps`; an app already installed may do the job) and the catalog
-   (`catalog_list`, and `suite_get` for a suite that may fit).
-2. Know three facts: what the person sells, to whom, and where their customers come from today. Ask only for the ones
-   they have not given, at most one or two short questions, and never again what they already said. If all three are
-   known, ask nothing and propose. Setup details (accounts, recordings, settings) wait until the install. Do not default
-   to a B2B sales stack: a clinic, a shop and an agency need different things.
-3. Turn what they said into jobs in their words: "clients book a visit", "remind them the day before", "keep one
+1. Read before you ask: the board (`list_apps`; an app already installed may do the job), the company's brand profile
+   (`brand_profile`) and the catalog (`catalog_list`, and `suite_get` for a suite that may fit).
+2. Is this person a newcomer? Yes when the talk reached Beyonder work about a goal or the choice of apps ("what should
+   I install", "I want more clients", "set me up") and the board is empty (`list_apps` shows no app) or the brand
+   profile has no audience and no offers. Not at the start of a session for unrelated work. A newcomer is interviewed
+   before anything is installed or proposed (step 3). Anyone else: know three facts (what they sell, to whom, where
+   customers come from today), ask only for the ones they have not given, at most one or two short questions, and
+   if all are known ask nothing and propose.
+3. The onboarding interview: 3 to 5 questions at most, grouped in one message, or with `ask_choice` buttons where the
+   answer is a choice:
+   - What the business sells, and to whom.
+   - The main goal now (more leads, bookings, content, sales, retention), in their words.
+   - The channels they already use (Instagram, WhatsApp, site, email, LinkedIn).
+   - What they already use for this (their own CRM, a booking tool), so nothing is duplicated.
+   Never ask what the person already said, or what the board or the brand profile already shows. Setup details
+   (accounts, recordings, settings) wait until the install. Do not default to a B2B sales stack: a clinic, a shop and
+   an agency need different things.
+4. Restate, then propose: "So you are X, you want Y from Z, right?" Then the plan, suite first when it covers the
+   jobs: what each app is for in their words, what the person must do themselves (connect accounts, pay), and the
+   price when it is known. Install only after the person's yes (a suite keeps its dry run and explicit yes).
+5. Save what you learned: after the interview call `brand_set` with `audience` (who the customers are) and `offers`
+   (what the business sells, and the channels they use). When the company has no brand profile yet, also pass `name`:
+   the company's name from `companies_list`. Do not save voice or tone unless the person talked about it. In any later
+   conversation, read `brand_profile` before you ask about the business and use what is there.
+6. Turn what they said into jobs in their words: "clients book a visit", "remind them the day before", "keep one
    list of patients", "answer messages from Instagram".
-4. For each job, find candidate apps in the catalog. Read a candidate's full description with `catalog_list(app)`
+7. For each job, find candidate apps in the catalog. Read a candidate's full description with `catalog_list(app)`
    when the one-line summary leaves doubt. Check the person's access there (bought, by subscription, or a plan is
    needed).
-5. Propose the smallest set that does the jobs. For each app, say in the person's words what it is for, not its id.
+8. Propose the smallest set that does the jobs. For each app, say in the person's words what it is for, not its id.
    Say which job has no app. A proposal is not an install: do not promise to install or connect anything.
-6. When the jobs need several apps, look at the suites too (`catalog_list`). If a suite or a template covers the
+9. When the jobs need several apps, look at the suites too (`catalog_list`). If a suite or a template covers the
    jobs, offer it first in one line: what it installs, which of its apps the jobs do not need, and that a template
    also adds starter settings. Let the person choose between the suite and single apps. Never install a subset of a
    suite without saying the suite exists.
-7. The apps do the work: do not write the person's posts, video scripts, ads or other content yourself, and do not
+10. The apps do the work: do not write the person's posts, video scripts, ads or other content yourself, and do not
    offer to. Say which app does it once installed.
 
 For a vague goal, an install is a dry run first (`dry_run: true`): show what would be installed and wait for the
